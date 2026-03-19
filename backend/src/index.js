@@ -12,7 +12,7 @@ import path from 'path';
 dotenv.config();
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
   credentials: true,
 }));
 
@@ -24,14 +24,23 @@ app.use((req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
   next();
 });
+
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 
-
-const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "frontend/dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "frontend/dist/index.html"));
+  });
+}
+
+const PORT = process.env.PORT || 5001;
+
 server.listen(PORT, () =>{
-    console.log('Server is running on port : ' + PORT);
-    connectDB();
+  console.log('Server is running on port : ' + PORT);
+  connectDB();
 });
