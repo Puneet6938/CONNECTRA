@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema(
         profilePic : {
             type: String,
             default: ''
+        },
+        lastseen : {
+            type: Date,
+            default: null
         }
     },
 

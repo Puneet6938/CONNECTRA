@@ -1,12 +1,12 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Users } from "lucide-react";
 
 const Sidebar = () => {
-  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } = useChatStore();
+  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } =
+    useChatStore();
 
   const { onlineUsers } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
@@ -15,20 +15,41 @@ const Sidebar = () => {
     getUsers();
   }, [getUsers]);
 
+  // ✅ Safe online check (handles ObjectId/string mismatch)
+  const isOnline = (userId) =>
+    onlineUsers.some((id) => id?.toString() === userId?.toString());
+
+  // ✅ Filter users properly
   const filteredUsers = showOnlineOnly
-    ? users.filter((user) => onlineUsers.includes(user._id))
+    ? users.filter((user) => isOnline(user._id))
     : users;
+
+  const formatLastSeen = (timestamp) => {
+    const diff = Date.now() - new Date(timestamp);
+
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes} min ago`;
+    if (hours < 24) return `${hours} hr ago`;
+
+    return new Date(timestamp).toLocaleDateString();
+  };
 
   if (isUsersLoading) return <SidebarSkeleton />;
 
   return (
     <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
+      
+      {/* Header */}
       <div className="border-b border-base-300 w-full p-5">
         <div className="flex items-center gap-2">
           <Users className="size-6" />
           <span className="font-medium hidden lg:block">Contacts</span>
         </div>
-        {/* TODO: Online filter toggle */}
+
+        {/* Filter */}
         <div className="mt-3 hidden lg:flex items-center gap-2">
           <label className="cursor-pointer flex items-center gap-2">
             <input
@@ -39,50 +60,75 @@ const Sidebar = () => {
             />
             <span className="text-sm">Show online only</span>
           </label>
-          <span className="text-xs text-zinc-500">({onlineUsers.length - 1} online)</span>
+
+          {/* ✅ Fixed count */}
+          <span className="text-xs text-zinc-500">
+            ({onlineUsers.length} online)
+          </span>
         </div>
       </div>
 
+      {/* Users List */}
       <div className="overflow-y-auto w-full py-3">
-        {filteredUsers.map((user) => (
-          <button
-            key={user._id}
-            onClick={() => setSelectedUser(user)}
-            className={`
-              w-full p-3 flex items-center gap-3
-              hover:bg-base-300 transition-colors
-              ${selectedUser?._id === user._id ? "bg-base-300 ring-1 ring-base-300" : ""}
-            `}
-          >
-            <div className="relative mx-auto lg:mx-0">
-              <img
-                src={user.profilePic || "/avatar.png"}
-                alt={user.name}
-                className="size-12 object-cover rounded-full"
-              />
-              {onlineUsers.includes(user._id) && (
-                <span
-                  className="absolute bottom-0 right-0 size-3 bg-green-500 
-                  rounded-full ring-2 ring-zinc-900"
+        {filteredUsers.map((user) => {
+          const online = isOnline(user._id);
+
+          return (
+            <button
+              key={user._id}
+              onClick={() => setSelectedUser(user)}
+              className={`
+                w-full p-3 flex items-center gap-3
+                hover:bg-base-300 transition-colors
+                ${
+                  selectedUser?._id === user._id
+                    ? "bg-base-300 ring-1 ring-base-300"
+                    : ""
+                }
+              `}
+            >
+              {/* Avatar */}
+              <div className="relative mx-auto lg:mx-0">
+                <img
+                  src={user.profilePic || "/avatar.png"}
+                  alt={user.fullName}
+                  className="size-12 object-cover rounded-full"
                 />
-              )}
-            </div>
 
-            {/* User info - only visible on larger screens */}
-            <div className="hidden lg:block text-left min-w-0">
-              <div className="font-medium truncate">{user.fullName}</div>
-              <div className="text-sm text-zinc-400">
-                {onlineUsers.includes(user._id) ? "Online" : "Offline"}
+                {/* 🟢 Online indicator */}
+                {online && (
+                  <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
+                )}
               </div>
-            </div>
-          </button>
-        ))}
 
+              {/* User Info */}
+              <div className="hidden lg:block text-left min-w-0">
+                <div className="font-medium truncate">
+                  {user.fullName}
+                </div>
+
+                {/* 🔥 Status */}
+                <div className="text-sm text-zinc-400">
+                  {online
+                    ? "Online"
+                    : user.lastseen
+                    ? `Last seen ${formatLastSeen(user.lastseen)}`
+                    : "Offline"}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+
+        {/* Empty State */}
         {filteredUsers.length === 0 && (
-          <div className="text-center text-zinc-500 py-4">No online users</div>
+          <div className="text-center text-zinc-500 py-4">
+            No online users
+          </div>
         )}
       </div>
     </aside>
   );
 };
+
 export default Sidebar;

@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
+import User from "../models/user.models.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -30,9 +31,10 @@ io.on("connection", (socket) => {
   // io.emit() is used to send events to all the connected clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     console.log("A user disconnected", socket.id);
     delete userSocketMap[userId];
+    await User.findByIdAndUpdate(userId, { lastseen: Date.now() });
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });
