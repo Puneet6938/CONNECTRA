@@ -78,7 +78,6 @@ const SignUpPage = () => {
                 type="text"
                 placeholder="John Doe"
                 className="input input-bordered w-full pl-12 
-                    border-2 border-base-content/20 
                     focus:border-primary 
                     focus:outline-none 
                     transition-all duration-200 "
@@ -105,8 +104,7 @@ const SignUpPage = () => {
                 <input
                   type="email"
                   placeholder="john@example.com"
-                  className="input input-bordered w-full pl-12 
-                            border-2 border-base-content/20 
+                  className="input input-bordered w-full pl-12  
                             focus:border-primary 
                             focus:outline-none 
                             transition-all duration-200"
@@ -133,8 +131,7 @@ const SignUpPage = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className="input input-bordered w-full pl-12 
-                          border-2 border-base-content/20 
+                className="input input-bordered w-full pl-12                         
                           focus:border-primary 
                           focus:outline-none 
                           transition-all duration-200"
